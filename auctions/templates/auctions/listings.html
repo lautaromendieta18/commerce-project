@@ -1,0 +1,103 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <h2>Listings: {{ auction.title }}</h2>
+    {% if auction.winner == user %}<span class="badge text-bg-success">You won!</span>{% endif %}
+    {% if auction.closed %}
+        <span class="badge text-bg-dark">Closed</span>
+    {% endif %}
+    {% if user.is_authenticated %}
+    
+        {% if not onWatchlist %}
+            {% if not auction.closed %}
+                <form action="{% url 'watchlist' %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" value="{{ auction.id }}">
+                    <button type="submit" class="btn btn-primary">Add to Watchlist</button>
+                </form>
+            {% endif %}
+        {% else %}
+
+            <span class="badge text-bg-secondary">Watchlist</span>
+
+        {% endif %}
+    {% endif %}
+
+    <div class="container my-2">
+        <img src="{{ auction.image }}" alt="Auction" width="600">
+    </div>
+    <div>
+        <p class="mx-2">{{ auction.description }}</p>
+    </div>
+    <div>
+        <p class="mt-2"><b>Starting bid:</b> ${{ auction.starting_bid }}</p>
+        {% if auction.winner %}<h6>Sold by</h6>{% endif %}
+        <h2 class="mb-4">${{ current_bid.bid }}</h2>
+    </div>
+    
+    {% if user.is_authenticated %}
+        {% if not auction.closed %}
+            <form action="{% url 'bid' %}" method="post">
+                {% csrf_token %}
+                {{ total_bids }} bid(s) so far. {% if current_bid.user == user %} Your bid is the current bid {% endif %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-warning" role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+                <input type="hidden" name="id" value="{{ auction.id }}">
+                <input class="form-control" type="text" name="bid" placeholder="Bid">
+                <button type="submit" class="btn btn-primary my-3">Place bid</button>
+            </form>
+        {% endif %}
+    {% endif %}
+    <div class="my-4">
+        <h4>Details:</h4>
+        <ul>
+            <li>Created by {{ auction.creator }}</li>
+            {% if auction.closed %}
+            <li>Closed</li>
+            {% endif %}
+            {% if auction.winner %}
+            <li>Winner: {{ auction.winner }}</li>
+            {% endif %}
+        </ul>
+
+    </div>
+    
+    {% if auction.creator == user %}
+        {% if not auction.closed %}
+            <form action="{% url 'close' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="id" value="{{ auction.id }}">
+                <button type="submit" class="btn btn-danger my-2">Close Auction</button>
+            </form>
+        {% endif %}
+    {% endif %}
+
+    {% if user.is_authenticated %}
+        <form action="{% url 'comment' %}" method="post">
+            <div class="my-3">
+                {% csrf_token %}
+                <label for="comment" class="form-label">Make a comment</label>
+                <textarea name="comment" class="form-control" id="comment" rows="3"></textarea>
+                <input type="hidden" name="id" value="{{ auction.id }}">
+                <button type="submit" class="btn btn-primary my-1">Submit</button>
+              </div>
+        </form>
+    {% endif %}
+
+    {% for comment in auction.comments.all %}
+    <div class="my-4">
+        <div class="card text-start">
+            <div class="card-header">
+            {{ comment.user }} says:
+            <div class="text-end">{{ comment.time }}</div>
+            </div>
+            <div class="card-body">
+            <p class="card-text">{{ comment.comment }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endblock %}
